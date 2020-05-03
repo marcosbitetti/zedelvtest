@@ -2,25 +2,14 @@
 
 by marcosbitetti@gmail.com
 
-## Setup
-
-* copy **.env.example** inside **"application"** and renamed to **.env**
-
-* run in project root:
-    
-       pip install -r requirements.txt
-
-### **Troubleshooting**
-
-#### Missing permissions on mongo-volume
-* add permissions to write, ex: **sudo chmod -R 775 ./docker/mongo-volume**
-
-#### Changing ports
-* if you wish to change ports, just change oin .env and docker-compose.yml
-
 ## Running / Deploy
 
-#### I recommend a conteiner:
+copy **.env.example** inside **"application"** and renamed to **.env**
+
+      cp .env.example application/.env
+
+
+#### Then I recommend a conteiner:
 
     cd docker
     docker-compose up --build
@@ -39,6 +28,15 @@ It's make a server running faster.
     pip install -r requirements.txt
     cd application
     python main.py
+
+### **Troubleshooting**
+
+#### Missing permissions on mongo-volume
+* add permissions to write, ex: **sudo chmod -R 775 ./docker/mongo-volume**
+
+#### Changing ports if needed
+* if you wish to change ports, just change oin .env and docker-compose.yml
+
 
 ## Server
 
