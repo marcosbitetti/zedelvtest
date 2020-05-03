@@ -1,0 +1,30 @@
+version: '3.1'
+services:
+  web:
+    image: python:3.7.5
+    container_name: python1
+    #restart: always
+    volumes:
+      - ./../application:/opt/app
+      - /setup
+      - ./../requirements.txt:/setup/requirements.txt:ro
+    command: bash -c "pip install --upgrade pip && pip install -r /setup/requirements.txt && python /opt/app/main.py"
+    ports:
+      - '5050:5050'
+    network_mode: host
+
+  database:
+    image: 'mongo'
+    container_name: 'mongo_teste'
+    environment:
+      - MONGO_INITDB_DATABASE=zedelivery
+      - MONGO_INITDB_ROOT_USERNAME=root
+      - MONGO_INITDB_ROOT_PASSWORD=root
+    volumes:
+      - ./init.d:/docker-entrypoint-initdb.d:ro
+      - ./mongo-volume:/data/db
+    ports:
+      - '27017-27019:27017-27019'
+    network_mode: host
+volumes:
+  persistent:

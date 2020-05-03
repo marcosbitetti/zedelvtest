@@ -1,0 +1,18 @@
+version: '3.1'
+services:
+  database:
+    image: 'mongo'
+    container_name: 'mongo_teste'
+    environment:
+      - MONGO_INITDB_DATABASE=zedelivery
+      - MONGO_INITDB_ROOT_USERNAME=root
+      - MONGO_INITDB_ROOT_PASSWORD=root
+    volumes:
+      - ./../docker/init.d:/docker-entrypoint-initdb.d:ro
+      - ./../docker/mongo-volume:/data/db
+    ports:
+      - '27017-27019:27017-27019'
+    networks:
+      - default
+volumes:
+  persistent:

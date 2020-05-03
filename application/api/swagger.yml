@@ -1,0 +1,304 @@
+swagger: "2.0"
+info:
+  description: |
+    That api are based on test requirements.
+    Data model Partner are based on it.
+    Other Data Model, like Geo Data, are credited and referencied inside yml document.
+  version: "1.0.0"
+  title: REST Zé Delivery test
+consumes:
+  - "application/json"
+produces:
+  - "application/json"
+
+basePath: "/api"
+
+paths:
+
+  /partner/{id}:
+    get:
+      operationId: "resources.partners.get"
+      summary: "Get partner from ID"
+      description: "Get partner from ID."
+      tags:
+        - Partners
+      parameters:
+        - name: id
+          type: integer
+          in: path
+          required: true
+          description: "id of registry"
+      responses:
+        200:
+          description: "A partner full data"
+          schema:
+            $ref: "#/definitions/Partner"
+          examples:
+            Partner:
+              - id: 1
+                tradingName: 'Adega Osasco'
+                ownerName: 'Ze da Ambev'
+                document: '02.453.716/000170'
+                address:
+                  - type: Point
+                    coordinates: [-43.297337,-23.013538 ]
+                coverageArea:
+                  - type: MultiPolygon
+                    coordinates: [[[-49.36299,-25.4515], [-49.35334,-25.45065], [-49.33675, -25.4429], [-49.36299,-25.4515]]]
+
+  /partner/search:
+    get:
+      operationId: "resources.partners.search"
+      summary: "Get partners nearby lat long"
+      description: |
+        Get partners nearby latitude and longiude.
+
+        I notice that MongoDB have spatial queries, then I use it as preffered way.
+        In spite of I not know how MongoDB/GraphQL resolve that queries in they core, I consider the idea that the engine can solve the problem by itself, in first instance.
+        But my first ideas are  pre-compute a bounding boxes for all partners, and use a simple query to intersect it with a bounding boxe from user.
+        After it avaliate each point of geometry are intersect of max-ray (using de inverse square root)
+        (A normal aproach when we are used to it in Game Engines)
+
+        Next steps are calculated nearest store, then I interact in the array using "address", sorting by inverse square root of distance of user.
+
+        ### Notes:
+        * Some fields are ommited from result, to minify the list as useful in realworld;
+        * Result cache are not required in test description;
+        * Pagination are not required in test description;
+      tags:
+        - Partners
+      parameters:
+        - name: lat
+          type: number
+          in: query
+          required: true
+          minimum: -180.0
+          maximum: 180.0
+          description: "Latitude"
+        - name: lon
+          type: number
+          in: query
+          required: true
+          minimum: -180.0
+          maximum: 180.0
+          description: "Longitude"
+        - name: radius
+          type: number
+          in: query
+          required: false
+          minimum: 0.1
+          maximum: 6000.0
+          default: 10.0
+          description: "Radius to search, in Km"
+      responses:
+        200:
+          description: "Partners list"
+          schema:
+            type: array
+            items:
+              $ref: "#/definitions/Partner"
+
+  /partner:
+    post:
+      operationId: "resources.partners.create"
+      summary: "Add a partner"
+      description: "Add a partner"
+      tags:
+        - Partners
+      parameters:
+        - name: partner
+          in: body
+          schema:
+            $ref: "#/definitions/Partner"
+            example:
+              Partner:
+                - tradingName: 'Adega Osasco'
+                  ownerName: 'Ze da Ambev'
+                  document: '02.453.716/000170'
+                  address:
+                    - type: Point
+                      coordinates: [-43.297337,-23.013538 ]
+                  coverageArea:
+                    - type: MultiPolygon
+                      coordinates: [[[-49.36299,-25.4515], [-49.35334,-25.45065], [-49.33675, -25.4429], [-49.36299,-25.4515]]]
+      responses:
+          200:
+            description: "Insert operation"
+            schema:
+              type: object
+              properties:
+                status:
+                  type: string
+                insertedId:
+                  type: integer
+
+definitions:
+  Error:
+    required:
+      - code
+      - message
+    properties:
+      code:
+        type: string
+      message:
+        type: string
+
+  #
+  # Definition of Partner
+  #
+  Partner:
+    type: object
+    description: Partner (PDV) including GeoData
+    required:
+      - tradingName
+      - ownerName
+      - document
+      - address
+      - coverageArea
+    properties:
+      id:
+        type: integer
+      tradingName:
+        type: string
+      ownerName:
+        type: string
+      document:
+        type: string
+      address:
+        allOf:
+          - $ref: "#/definitions/Point"
+      coverageArea:
+        allOf:
+          - $ref: "#/definitions/MultiPolygon"
+
+  # Thanks a lot for swagger gist https://gist.github.com/bubbobne/fe5f2db65acf039be6a9fd92fc9c7233#file-geometry_geojson-yaml
+  Geometry:
+    type: object
+    description: GeoJSon geometry
+    discriminator: type
+    required:
+      - type
+    externalDocs:
+      url: http://geojson.org/geojson-spec.html#geometry-objects
+    properties:
+      type:
+        type: string
+        enum:
+        - Point
+        - LineString
+        - Polygon
+        - MultiPoint
+        - MultiLineString
+        - MultiPolygon
+        description: the geometry type
+
+  Point2D:
+    type: array
+    maxItems: 2
+    minItems: 2
+    items:
+      type: number
+
+
+  Point:
+    type: object
+    description: GeoJSon geometry
+    externalDocs:
+      url: http://geojson.org/geojson-spec.html#id2
+    allOf:
+      - $ref: "#/definitions/Geometry"
+      - properties:
+          coordinates:
+            $ref: '#/definitions/Point2D'
+
+  LineString:
+    type: object
+    description: GeoJSon geometry
+    externalDocs:
+      url: http://geojson.org/geojson-spec.html#id3
+    allOf:
+      - $ref: "#/definitions/Geometry"
+      - properties:
+          coordinates:
+            type: array
+            items:
+              $ref: '#/definitions/Point2D'
+
+  Polygon:
+    type: object
+    description: GeoJSon geometry
+    externalDocs:
+      url: http://geojson.org/geojson-spec.html#id4
+    allOf:
+      - $ref: "#/definitions/Geometry"
+      - properties:
+          coordinates:
+            type: array
+            items:
+              type: array
+              items:
+                $ref: '#/definitions/Point2D'
+
+  MultiPoint:
+    type: object
+    description: GeoJSon geometry
+    externalDocs:
+      url: http://geojson.org/geojson-spec.html#id5
+    allOf:
+      - $ref: "#/definitions/Geometry"
+      - properties:
+          coordinates:
+            type: array
+            items:
+              $ref: '#/definitions/Point2D'
+
+  MultiLineString:
+    type: object
+    description: GeoJSon geometry
+    externalDocs:
+      url: http://geojson.org/geojson-spec.html#id6
+    allOf:
+      - $ref: "#/definitions/Geometry"
+      - properties:
+          coordinates:
+            type: array
+            items:
+              type: array
+              items:
+                $ref: '#/definitions/Point2D'
+
+
+  MultiPolygon:
+    type: object
+    description: GeoJSon geometry
+    externalDocs:
+      url: http://geojson.org/geojson-spec.html#id6
+    allOf:
+      - $ref: "#/definitions/Geometry"
+      - properties:
+          coordinates:
+            type: array
+            items:
+              type: array
+              items:
+                type: array
+                items:
+                  $ref: '#/definitions/Point2D'
+
+  GeometryCollection:
+    type: object
+    description: GeoJSon geometry collection
+    required:
+     - type
+     - geometries
+    externalDocs:
+      url: http://geojson.org/geojson-spec.html#geometrycollection
+    properties:
+      type:
+        type: string
+        enum:
+        - GeometryCollection
+      geometries:
+        type: array
+        items:
+          $ref: '#/definitions/Geometry'
