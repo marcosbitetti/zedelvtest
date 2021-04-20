@@ -17,7 +17,7 @@ numpy==1.18.3
 openapi-spec-validator==0.2.8
 packaging==20.3
 pluggy==0.13.1
-py==1.8.1
+py==1.10.0
 pymongo==3.10.1
 pyparsing==2.4.7
 pyrsistent==0.16.0
